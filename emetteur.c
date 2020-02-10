@@ -94,6 +94,7 @@ int main(int argc, char **argv)
 			close(sock);
 			exit(1);
 	    	   }
+	    	   suggest_my_price = 0;
 	    	}
 	    }
         }
