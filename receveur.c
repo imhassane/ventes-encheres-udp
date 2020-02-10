@@ -22,7 +22,7 @@ void arretParControlC(int sig)
 	fflush(stdout);
 	exit(1);
 	/* Actions a faire pour la partie 1.3*/
-	
+
 }
 
 int main (int argc, char **argv)
@@ -35,14 +35,16 @@ int main (int argc, char **argv)
     struct sockaddr_in adresseEmetteur;
     int lgadresseEmetteur;
 
+    struct sockaddr_in adresse
+
     struct hostent *hote;
     struct sigaction action;
 
-    char message[20] ;
+    char message[200] ;
     char product_description[] = "Nom: IPhone, Description: telephone tres intelligent";
 
     int wait_client = 1, nb_client = 0;
-    int end_selling = 0, max_price = 0, current_price = 0;
+    int end_selling = 0, max_price = 0, recv_price = 0, current_price = 0;
 
     struct sockaddr_in liste_clients[MAX_CLIENTS];
 
@@ -82,7 +84,7 @@ int main (int argc, char **argv)
         }
         if(strcmp(message, "demande") == 0) {
             liste_clients[nb_client] = adresseEmetteur;
-            
+ 
             strcpy(message, "accept");
 
             if ((envoye = sendto( sock, message, strlen(message)+1, 0, (struct sockaddr *) &adresseEmetteur, lgadresseEmetteur )) != strlen(message)+1) 
@@ -102,6 +104,9 @@ int main (int argc, char **argv)
     puts("Debut des encheres");
     printf("\t--%d acheteurs participent\n", nb_client);
 
+    // On définit le prix de base avant le début des encheres.
+    puts("Entrez le prix de base du produit");
+    scanf("%d", &current_price);
 
     // Envoie du message pour annoncer le debut de la vente aux encheres.
     puts("Avertissement des clients");
@@ -114,15 +119,15 @@ int main (int argc, char **argv)
             close(sock); 
             exit(1);
         }
-        if ((envoye = sendto( sock, product_description, strlen(message)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(message)+1) 
+        if ((envoye = sendto( sock, product_description, strlen(product_description)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(product_description)+1) 
         {
             perror("sendto description message"); 
             close(sock); 
             exit(1);
         }
 
-        sprintf(message, "%d", current_price);
-        if ((envoye = sendto( sock, message, sizeof(current_price), 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != sizeof(current_price)) 
+        sprintf(message, "Prix du produit: %d", current_price);
+        if ((envoye = sendto( sock, message, strlen(message) + 1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(message) + 1) 
         {
             perror("sendto price message"); 
             close(sock); 
@@ -132,7 +137,14 @@ int main (int argc, char **argv)
 
 
     while(end_selling == 0) {
-        end_selling = 1;
+        if((recu = recvfrom(sock, &recv_price, sizeof(recv_price), 0, (struct sockaddr *) &adreseEmetteur, &lgadresseEmetteur)) == -1) {
+		perror("recvfrom end_selling");
+		close(sock);
+		exit(1);
+        }
+        if(recv_price > max_price) {
+        	max_price = recv_price;
+        }
     }
 
     close(sock);

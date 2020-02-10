@@ -19,7 +19,8 @@ int main(int argc, char **argv)
     struct hostent *hote;
 
     int stay_in_market = 1;
-    char message[20];
+    char message[200];
+    int my_price = 0, suggest_my_price = 0;
 
     /* cr'eation de la socket */
     if ((sock = socket( AF_INET, SOCK_DGRAM, 0 )) == -1) 
@@ -48,7 +49,7 @@ int main(int argc, char **argv)
     printf("L'adresse en notation pointee %s\n", inet_ntoa(adresseReceveur.sin_addr));
 
     strcpy(message,"demande");
-    
+
     lgadresseReceveur = sizeof(adresseReceveur);
     if ((envoye = sendto( sock, message, strlen(message)+1, 0, (struct sockaddr *) &adresseReceveur, lgadresseReceveur )) != strlen(message)+1) 
     {
@@ -75,10 +76,29 @@ int main(int argc, char **argv)
         if(strcmp(message, "start") == 0) {
             puts("La vente aux encheres a commence");
         } else {
-            puts(message); 
+            puts(message);
+
+	    puts("Souhaitez-vous rester dans la vente aux encheres - (1: Oui / 0: Non)");
+	    scanf("%d", &stay_in_market);
+	    // Si le client veut rester dans la vente,
+	    // On demande si il veut proposer son prix
+	    // si oui, on le lui demande et on l'envoie au serveur.
+	    puts("Souhaitez-vous proposer un prix pour ce produit - (1: Oui / 0: Non)");
+	    scanf("%d", &suggest_my_price);
+	    if(stay_in_market == 1 && suggest_my_price == 1) {
+	    	puts("--Entrez votre prix");
+	    	scanf("%d", &my_price);
+	    	if(my_price > 0) {
+	    	   if((envoye = sendto(sock, &my_price, sizeof(my_price), 0, (struct sockaddr *)  &adresseReceveur, lgadresseReceveur)) != sizeof(my_price)) {
+			perror("sendto my_price");
+			close(sock);
+			exit(1);
+	    	   }
+	    	}
+	    }
         }
     }
-    
+
 
 
     close(sock);
