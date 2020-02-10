@@ -27,7 +27,7 @@ void arretParControlC(int sig)
 
 int main (int argc, char **argv)
 {
-    int sock, sock_selling, recu, envoye;
+    int sock, recu, envoye;
 
     struct sockaddr_in adresseLocale;
     int lgadresseLocale;
@@ -101,11 +101,6 @@ int main (int argc, char **argv)
         scanf("%1d", &wait_client);
 
     }
-    close(sock);
-    if(( bind(sock_selling, (struct  sockaddr *) &adresseLocale, lgadresseLocale)) == -1) {
-	perror("bind sock_selling");
-	exit(1);
-    }
     puts("Debut des encheres");
     printf("\t--%d acheteurs participent\n", nb_client);
 
@@ -118,48 +113,47 @@ int main (int argc, char **argv)
     int i;
     for(i = 0; i < nb_client; i++) {
         strcpy(message, "start");
-        if ((envoye = sendto( sock_selling, message, strlen(message)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(message)+1) 
+        if ((envoye = sendto( sock, message, strlen(message)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(message)+1) 
         {
             perror("sendto start message"); 
-            close(sock_selling); 
+            close(sock); 
             exit(1);
         }
-        if ((envoye = sendto( sock_selling, product_description, strlen(product_description)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(product_description)+1) 
+        if ((envoye = sendto( sock, product_description, strlen(product_description)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(product_description)+1) 
         {
             perror("sendto description message"); 
-            close(sock_selling); 
+            close(sock); 
             exit(1);
         }
 
         sprintf(message, "Prix du produit: %d", current_price);
-        if ((envoye = sendto( sock_selling, message, strlen(message) + 1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(message) + 1) 
+        if ((envoye = sendto( sock, message, strlen(message) + 1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(message) + 1) 
         {
             perror("sendto price message"); 
-            close(sock_selling); 
+            close(sock); 
             exit(1);
         }
     }
 
 
     while(end_selling == 0) {
-        if((recu = recvfrom(sock_selling, &recv_price, sizeof(recv_price), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
+        if((recu = recvfrom(sock, &recv_price, sizeof(recv_price), 0, (struct sockaddr *) &adresseEmetteur, &lgadresseEmetteur)) == -1) {
 		perror("recvfrom end_selling");
-		close(sock_selling);
+		close(sock);
 		exit(1);
         }
         if(recv_price > max_price) {
         	max_price = recv_price;
-        	adresseTopClient = adresseEmetteur;
-        	// On avertit tout le monde du nouveau prix.
-        	sprintf(message, "Le nouveau prix est: %d", max_price);
+        	// adresseTopClient = adresseEmetteur;
+        	sprintf(message, "\t[NEW]: Le nouveau prix a battre est de: %d euros", max_price);
         	for(i=0; i<nb_client; i++) {
-			if((envoye = sendto(sock_selling, message, strlen(message) + 1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur)) != strlen(message) + 1) {
-			   perror("sendto nouveau prix max");
-			   close(sock_selling);
-			   exit(1);
-			}
+		   if((envoye=sendto(sock, message, strlen(message)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur)) == -1) {
+			perror("sendto nouveau prix max");
+			close(sock);
+			exit(1);
+		   }
         	}
-
+        	printf("\tNouveau prix: %d\n", max_price);
         }
     }
 
