@@ -1,5 +1,3 @@
-/* emetteur portReceveur machineReceveur */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -19,7 +17,7 @@ int main(int argc, char **argv)
     struct hostent *hote;
 
     int stay_in_market = 1;
-    char message[200];
+    char message[300];
     int my_price = 0, suggest_my_price = 0;
 
     /* cr'eation de la socket */
@@ -73,30 +71,47 @@ int main(int argc, char **argv)
             exit(1);
         }
 
+        if(strcmp(message, "NULL") == 0) {
+            puts("Fin des encheres");
+            if((recu = recvfrom(sock, message, sizeof(message), 0, (struct sockaddr *) &adresseReceveur, &lgadresseReceveur)) == -1 ) {
+                perror("recvfrom fin enchere prix final");
+                close(sock);
+                exit(1);
+            }
+            printf("Le gagnant l'a remportee avec la proposition de %s euros.\n", message);
+            if(atoi(message) == my_price) {
+                puts("Je viens de remporter les encheres");
+                close(sock);
+            }
+
+            stay_in_market = 0;
+            break;
+        }
+
         if(strcmp(message, "start") == 0) {
             puts("La vente aux encheres a commence");
         } else {
             puts(message);
 
-	    puts("Souhaitez-vous rester dans la vente aux encheres - (1: Oui / 0: Non)");
-	    scanf("%d", &stay_in_market);
-	    // Si le client veut rester dans la vente,
-	    // On demande si il veut proposer son prix
-	    // si oui, on le lui demande et on l'envoie au serveur.
-	    puts("Souhaitez-vous proposer un prix pour ce produit - (1: Oui / 0: Non)");
-	    scanf("%d", &suggest_my_price);
-	    if(stay_in_market == 1 && suggest_my_price == 1) {
-	    	puts("--Entrez votre prix");
-	    	scanf("%d", &my_price);
-	    	if(my_price > 0) {
-	    	   if((envoye = sendto(sock, &my_price, sizeof(my_price), 0, (struct sockaddr *)  &adresseReceveur, lgadresseReceveur)) != sizeof(my_price)) {
-			perror("sendto my_price");
-			close(sock);
-			exit(1);
-	    	   }
-	    	   suggest_my_price = 0;
-	    	}
-	    }
+	        // puts("Souhaitez-vous rester dans la vente aux encheres - (1: Oui / 0: Non)");
+            // scanf("%d", &stay_in_market);
+            // Si le client veut rester dans la vente,
+            // On demande si il veut proposer son prix
+            // si oui, on le lui demande et on l'envoie au serveur.
+            puts("Souhaitez-vous proposer un prix pour ce produit - (1: Oui / 0: Non)");
+            scanf("%d", &suggest_my_price);
+            if(stay_in_market == 1 && suggest_my_price == 1) {
+                puts("--Entrez votre prix");
+                scanf("%d", &my_price);
+                if(my_price > 0) {
+                if((envoye = sendto(sock, &my_price, sizeof(my_price), 0, (struct sockaddr *)  &adresseReceveur, lgadresseReceveur)) != sizeof(my_price)) {
+                        perror("sendto my_price");
+                        close(sock);
+                        exit(1);
+                }
+                suggest_my_price = 0;
+                }
+            }
         }
     }
 

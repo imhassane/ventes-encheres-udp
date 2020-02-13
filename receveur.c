@@ -40,7 +40,7 @@ int main (int argc, char **argv)
     struct hostent *hote;
     struct sigaction action;
 
-    char message[200] ;
+    char message[200], final_price[20] ;
     char product_description[] = "Nom: IPhone, Description: telephone tres intelligent";
 
     int wait_client = 1, nb_client = 0;
@@ -119,20 +119,17 @@ int main (int argc, char **argv)
             close(sock); 
             exit(1);
         }
+
+        sprintf(message, "\nPrix du produit: %d", current_price);
+        strcat(product_description, message);
+
         if ((envoye = sendto( sock, product_description, strlen(product_description)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(product_description)+1) 
         {
             perror("sendto description message"); 
             close(sock); 
             exit(1);
         }
-
-        sprintf(message, "Prix du produit: %d", current_price);
-        if ((envoye = sendto( sock, message, strlen(message) + 1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur )) != strlen(message) + 1) 
-        {
-            perror("sendto price message"); 
-            close(sock); 
-            exit(1);
-        }
+        
     }
 
 
@@ -144,18 +141,41 @@ int main (int argc, char **argv)
         }
         if(recv_price > max_price) {
         	max_price = recv_price;
-        	// adresseTopClient = adresseEmetteur;
-        	sprintf(message, "\t[NEW]: Le nouveau prix a battre est de: %d euros", max_price);
-        	for(i=0; i<nb_client; i++) {
-		   if((envoye=sendto(sock, message, strlen(message)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur)) == -1) {
-			perror("sendto nouveau prix max");
-			close(sock);
-			exit(1);
-		   }
-        	}
-        	printf("\tNouveau prix: %d\n", max_price);
+
+            puts("Souhaitez-vous continuer la vente aux enchères. (O: Oui / 1: NON)");
+            scanf("%d", &end_selling);
+
+            if(end_selling == 0) {
+        	
+                sprintf(message, "\t[NEW]: Le nouveau prix a battre est de: %d euros", max_price);
+                for(i=0; i<nb_client; i++) {
+                    if((envoye=sendto(sock, message, strlen(message)+1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur)) == -1) {
+                        perror("sendto nouveau prix max");
+                        close(sock);
+                        exit(1);
+                    }
+                }
+                printf("\tNouveau prix: %d\n", max_price);
+
+            }
         }
     }
 
+    strcpy(message, "NULL");
+    sprintf(final_price, "%d", max_price);
+
+   for(i=0; i<nb_client; i++) {
+        if((envoye=sendto(sock, message, strlen(message) + 1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur)) != strlen(message) + 1) {
+            perror("sendto fin encheres");
+            close(sock);
+            exit(1);
+        }
+         if((envoye=sendto(sock, final_price, strlen(final_price) + 1, 0, (struct sockaddr *) &liste_clients[i], lgadresseEmetteur)) != strlen(final_price) + 1) {
+            perror("sendto fin encheres, envoi prix max");
+            close(sock);
+            exit(1);
+        }
+   }
+    puts("Fin des encheres");
     close(sock);
 }
