@@ -21,13 +21,11 @@ void arretParControlC(int sig)
 	printf("terminaison par un Control-C\n");
 	fflush(stdout);
 	exit(1);
-	/* Actions a faire pour la partie 1.3*/
-
 }
 
 int main (int argc, char **argv)
 {
-    int sock, recu, envoye;
+    int sock, sock_vente, recu, envoye;
 
     struct sockaddr_in adresseLocale;
     int lgadresseLocale;
@@ -84,7 +82,7 @@ int main (int argc, char **argv)
         }
         if(strcmp(message, "demande") == 0) {
             liste_clients[nb_client] = adresseEmetteur;
- 
+
             strcpy(message, "accept");
 
             if ((envoye = sendto( sock, message, strlen(message)+1, 0, (struct sockaddr *) &adresseEmetteur, lgadresseEmetteur )) != strlen(message)+1) 
